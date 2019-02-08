@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  CMTWVDA503:
+    Type: AWS::EC2::Instance
+      DisableApiTermination: !FindInMap [Environments, !Ref EnvironmentValue, DISABLEAPITERMINATION]
+      IamInstanceProfile: !FindInMap [Environments, !Ref EnvironmentValue, IAMINSTANCEPROFILE]
+      ImageId: !FindInMap [Imageinfo, IMAGES, !Ref VDA01InstanceImage]
+      InstanceType: !Ref VDA01InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetID
+      Tags:
+        - Key: Name
+          Value: !Ref InstanceName
+        - Key: SSM_Association
+          Value: !Sub Windows-${Environment}
+Parameters:
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    Default: m5a.large
+    AllowedValues:
+      - m5a.large
+  Image:
+    Type: String
+    Default: ami-0f4c7e570f044b46f
+    AllowedValues:
+      - ami-0f4c7e570f044b46f
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - prod
+  Account:
+    Type: String
+    Default: sandbox
+    AllowedValues:
+      - sandbox
+  SubnetID:
+    Type: String
+    Description: SubnetID
+    Default: subnet-407ed619 #shared services staging
+    AllowedPattern: 'subnet-[0-9a-f]*'
+  InstanceName:
+    Type: String
+    Description: The name of the instance
+    Default: anewwindowsserver

@@ -1,0 +1,20 @@
+version: 0.2
+phases:
+  build:
+    commands:
+      - python scripts/build-ssm-cft.py ssm/windows-general-config/ssm.yml ssm/windows-general-config/config.ps1
+      # Build Windows general DSCs
+      - Set-location "$($env:CODEBUILD_SRC_DIR)\ssm\windows-general-config\dsc"
+      - .\build-windows-manage-dsc.ps1
+      # Build Windows general utils
+      - Set-location "$($env:CODEBUILD_SRC_DIR)\ssm\windows-general-config\util"
+      - Invoke-pester tests\CommonFunctions.tests.ps1
+  post_build:
+    commands:
+      - write-host "Build done on $(get-date)";
+artifacts:
+  type: zip
+  files:
+    - templates/*
+    - ssm/**/*
+    - appspec.yml

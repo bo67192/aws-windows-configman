@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Mappings:
+  sandbox:
+    prod:
+      SSMAssociationTag: Windows-prod
+Parameters:
+  EnvironmentParameter:
+    Type: String
+    Default: "prod"
+    AllowedValues:
+    - "prod"
+  AccountParameter:
+      Type: String
+      Default: sandbox
+      AllowedValues:
+      - sandbox
+Resources:
+  WindowsManageAssociation:
+    Type: "AWS::SSM::Association"
+    Properties:
+      AssociationName: !Sub Windows-Manager-${EnvironmentParameter}
+      Name: !Ref WindowsConfigDoc
+      Parameters:
+        Directory: [FakeDirectory]
+      ScheduleExpression: "cron(0 0/30 * 1/1 * ? *)"
+      Targets:
+        - Key: tag:SSM_Association
+          Values: [ !FindInMap [!Ref AccountParameter, !Ref EnvironmentParameter, SSMAssociationTag]]
+  WindowsConfigDoc:
+    Type: "AWS::SSM::Document"
+    Properties: 
+      DocumentType: "Command"
+      Content: 
+        schemaVersion: "2.0"
+        description: "Run a DocuTAP powershell script"
+        parameters:
+          Directory:
+            type: String
+            default: ""
+            description: "This is a dummy input to allow modifying the association through the console"
+        mainSteps:
+          - 
+            action: aws:runPowerShellScript
+            name: WindowsManager
+            inputs:
+              timeoutSeconds: 600
+              runCommand:
+              

@@ -1,0 +1,19 @@
+version: 0.0
+os: windows
+files:
+  - source: ssm\windows-ctxcnt-man\util
+    destination: c:\docutap\util\citrix\
+  - source: ssm\windows-cmtvda-config\util
+    destination: c:\docutap\util\vda\
+  - source: ssm\windows-ctxcnt-man\dsc
+    destination: c:\docutap\dsc\citrix
+  - source: ssm\windows-cmtvda-config\dsc
+    destination: c:\docutap\dsc\vda
+  - source: ssm\windows-general-config\dsc
+    destination: c:\docutap\dsc\windows
+  - source: ssm\windows-general-config\util
+    destination: c:\docutap\util\windows
+  - source: ssm\windows-progress-config\dsc
+    destination: c:\docutap\dsc\progress
+  - source: ssm\windows-progress-config\util
+    destination: c:\docutap\util\progress

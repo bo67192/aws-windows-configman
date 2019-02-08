@@ -1,0 +1,235 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  CodeBuildJob:
+    Type: "AWS::CodeBuild::Project"
+    Properties: 
+      Artifacts:
+        Type: NO_ARTIFACTS
+      BadgeEnabled: true
+      Description: Codebuild job to build windows configuration management tools
+      Environment:
+        Type: WINDOWS_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: aws/codebuild/windows-base:1.0
+      Name: SsmConfigManagement
+      ServiceRole: !Ref CloudformationRole
+      Source:
+        Type: GITHUB
+        Location: https://github.com/bolson/aws-windows-configman.git
+        Auth:
+          Type: OAUTH
+      TimeoutInMinutes: 15
+  S3ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      Tags:
+        -
+          Key: Name
+          Value: CodepipelineArtifactBucket
+  CodepipelineRole: 
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      RoleName: CodepipelineRole
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "codepipeline.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+  CloudformationRole: 
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      RoleName: CloudformationRole
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "cloudformation.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+  Pipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    DependsOn: CodeBuildJob
+    Properties:
+      Name: WindowsConfigManagement
+      RestartExecutionOnUpdate: true
+      ArtifactStore:
+        Type: S3
+        Location: !Ref S3ArtifactBucket
+      RoleArn: !Ref CodepipelineRole
+      Stages:
+        - 
+          Name: Source
+          Actions:
+            - 
+              Name: hc-adm-w-cmt-cft
+              ActionTypeId: 
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              OutputArtifacts: 
+                - 
+                  Name: hc-adm-w-cmt-cft
+              Configuration: 
+                Branch: master
+                OAuthToken: !Ref OAUTHTOKEN
+                Owner: DocuTAP
+                PollForSourceChanges: true
+                Repo: aws-windows-configman
+              RunOrder: 1
+        -
+          Name: Build
+          Actions:
+            - 
+              Name: BuildRepo
+              InputArtifacts:
+                - 
+                  Name: windows-configman
+              OutputArtifacts:
+                - 
+                  Name: windows-configman-built
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: SsmConfigManagement
+        -
+          Name: Prod
+          Actions:
+            -
+              Name: ChngSet-SSM
+              InputArtifacts:
+                - 
+                  Name: windows-configman-built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                ChangeSetName: updatefromcodepipeline
+                StackName: ssm-prod
+                TemplatePath: windows-configman-built::ssm/windows-general-config/ssm-build.yml
+                TemplateConfiguration: windows-configman-built::ssm/windows-general-config/prod.json
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !Ref CloudformationRole
+              RunOrder: 1
+            -
+              Name: ChngSet-DEP
+              InputArtifacts:
+                - 
+                  Name: windows-configman-built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                ChangeSetName: updatefromcodepipeline
+                StackName: dep-prod
+                TemplatePath: windows-configman-built::templates/dep.yml
+                TemplateConfiguration: windows-configman-built::templates/inst-params-prod.json
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !Ref CloudformationRole
+              RunOrder: 1
+            -
+              Name: ChngSet-Instance
+              InputArtifacts:
+                - 
+                  Name: windows-configman-built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                ChangeSetName: updatefromcodepipeline
+                StackName: ssm-prod
+                TemplatePath: windows-configman-built::ssm/windows/ssm-build.yml
+                TemplateConfiguration: windows-configman-built::templates/inst-params-prod.json
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !Ref CloudformationRole
+              RunOrder: 1
+            -
+              Name: Execute-SSM
+              InputArtifacts:
+                - 
+                  Name: windows-configman-built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: updatefromcodepipeline
+                StackName: ssm-prod
+                RoleArn: !Ref CloudformationRole
+              RunOrder: 5
+            -
+              Name: Execute-DEP
+              InputArtifacts:
+                - 
+                  Name: windows-configman-built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: updatefromcodepipeline
+                StackName: dep-prod
+                RoleArn: !Ref CloudformationRole
+              RunOrder: 5
+            -
+              Name: Execute-SSM
+              InputArtifacts:
+                - 
+                  Name: windows-configman-built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: updatefromcodepipeline
+                StackName: ssm-prod
+                RoleArn: !Ref CloudformationRole
+              RunOrder: 8
+            -
+              Name: Deploy-Powershell-Utilities
+              InputArtifacts:
+                - 
+                  Name: windows-configman-built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CodeDeploy
+              Configuration:
+                ApplicationName: !Sub "powershell-utilities"
+                DeploymentGroupName: !Sub "windows-prod"
+              RunOrder: 8
+Parameters:
+  OAUTHTOKEN:
+    Type: String

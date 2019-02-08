@@ -1,0 +1,272 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  AcctParm:
+    Type: String
+    Default: Sandbox
+    AllowedValues:
+      - Sandbox
+      - CORP
+      - PHI
+  EnvParm:
+    Type: String
+    Default: test
+    AllowedValues:
+      - test
+      - staging
+      - prod
+  PoolFleetVersion:
+    Type: String
+    Default: "v001"
+Mappings:
+  Accounts:
+    CORP:
+      AmiId: ami-2d18313b
+  Sandbox:
+    test:
+      SsmParameterArnPrefix: arn:aws:ssm:us-east-1:748540586735:parameter
+Resources:
+  IamRoleWindowsServer: 
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      RoleName: !Sub "Role=CMTPoolServer,Env=${EnvParm},Service=EC2,Rights=RW"
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+      - PolicyName: !Sub "Role=WindowsServer,Env=${EnvParm},Service=Cloudwatch,Rights=RW"
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:PutLogEvents
+            Resource: "*"
+  CodeDeployApplicationCtxMgmt:
+    Type: "AWS::CodeDeploy::Application"
+    Properties:
+      ApplicationName: !Sub "hc-cmt-man-utilities-${AcctParm}-${EnvParm}"
+  CodeDeployGroupCtx:
+    Type: "AWS::CodeDeploy::DeploymentGroup"
+    Properties:
+      ApplicationName: !Sub "hc-cmt-man-utilities-${AcctParm}-${EnvParm}"
+      DeploymentGroupName: !Sub "hs-cmt-${EnvParm}-deploy"
+      DeploymentConfigName: CodeDeployDefault.HalfAtATime
+      Ec2TagFilters:
+        -
+          Key: SSM_Modules
+          Value: !Sub PHI-ALL-${EnvParm}
+          Type: "KEY_AND_VALUE"
+      ServiceRoleArn: !FindInMap [!Ref AcctParm, all, CodeDeployServiceRole]
+    DependsOn: CodeDeployApplicationCtxMgmt
+  SsmAssociationUpdateAmazonInspectorManageAWSAgent:
+    Type: "AWS::SSM::Association"
+    Properties: 
+      AssociationName: !Sub HS-ADM-BASE-UpdateAWS-Inspector-${EnvParm}
+      Name: AmazonInspector-ManageAWSAgent
+      Parameters:
+        Operation: 
+          - Install
+      ScheduleExpression: "rate(1 day)"
+      Targets:
+        - Key: tag:SSM_Association
+          Values: 
+          Values: 
+            - !FindInMap [!Ref AcctParm, !Ref EnvParm, SSMAssociationTag]
+  SsmAssociationUpdateEc2Config:
+    Type: "AWS::SSM::Association"
+    Properties: 
+      AssociationName: !Sub HS-ADM-BASE-UpdateEc2Config-${EnvParm}
+      Name: AWS-UpdateEC2Config
+      ScheduleExpression: "rate(1 day)"
+      Targets:
+        - Key: tag:SSM_Association
+          Values: 
+          Values: 
+            - !FindInMap [!Ref AcctParm, !Ref EnvParm, SSMAssociationTag]
+            - !FindInMap [!Ref AcctParm, !Ref EnvParm, SSMAssociationCtxCnt]
+  SsmAssociationInstallCodeDeploy:
+    Type: "AWS::SSM::Association"
+    Properties: 
+      AssociationName: !Sub HC-ADM-CMT-InstallCodeDeploy-${EnvParm}
+      Name: AWS-InstallApplication
+      Parameters:
+        action: 
+          - Install
+        source: 
+          - https://aws-codedeploy-us-east-1.s3.amazonaws.com/latest/codedeploy-agent.msi
+        parameters: 
+          - "/quiet /l c:\\codedeploy-install-log.txt"
+      ScheduleExpression: "rate(1 day)"
+      Targets:
+        - Key: tag:SSM_Modules
+          Values: 
+            - !Sub "PHI-ALL-${EnvParm}"
+  SsmAssociationQueryUpdateSsmAgent:
+    Type: "AWS::SSM::Association"
+    Properties: 
+      AssociationName: !Sub HC-ADM-CMT-UpdateSsmAgent-${EnvParm}
+      Name: AWS-UpdateSSMAgent
+      ScheduleExpression: "rate(1 day)"
+      Parameters:
+        allowDowngrade: 
+          - "true"
+      Targets:
+        - Key: tag:SSM_Association
+          Values: 
+            - !FindInMap [!Ref AcctParm, !Ref EnvParm, SSMAssociationTag]
+            - !FindInMap [!Ref AcctParm, !Ref EnvParm, SSMAssociationCtxCnt]
+  SsmAssociationQueryScanPatches:
+    Type: "AWS::SSM::Association"
+    Properties: 
+      AssociationName: !Sub HC-ADM-CMT-ScanPatches-${EnvParm}
+      Name: AWS-RunPatchBaseline
+      ScheduleExpression: "rate(1 day)"
+      Parameters:
+        Operation: 
+          - Scan
+      Targets:
+        - Key: tag:SSM_Association
+          Values: 
+            - !FindInMap [!Ref AcctParm, !Ref EnvParm, SSMAssociationTag]
+            - !FindInMap [!Ref AcctParm, !Ref EnvParm, SSMAssociationCtxCnt]
+  SsmAssociationGatherInventory:
+    Type: "AWS::SSM::Association"
+    Properties: 
+      AssociationName: !Sub HC-ADM-CMT-GatherInventory-${EnvParm}
+      Name: AWS-GatherSoftwareInventory
+      ScheduleExpression: "rate(1 day)"
+      Targets:
+        - Key: tag:SSM_Association
+          Values: 
+            - !FindInMap [!Ref AcctParm, !Ref EnvParm, SSMAssociationTag]
+            - !FindInMap [!Ref AcctParm, !Ref EnvParm, SSMAssociationCtxCnt]
+  SsmAssociationConfigureCloudwatch:
+    Type: AWS::SSM::Association
+    Properties:
+      AssociationName: !Sub HC-ADM-CMT-ConfigureCloudwatch-${EnvParm}
+      Name: AWS-ConfigureCloudWatch
+      ScheduleExpression: "rate(1 day)"
+      Targets:
+        - Key: tag:SSM_Association
+          Values:
+            - !FindInMap [!Ref AcctParm, !Ref EnvParm, SSMAssociationTag]
+            - !FindInMap [!Ref AcctParm, !Ref EnvParm, SSMAssociationCtxCnt]
+      Parameters:
+        properties: 
+          - !Sub |+
+              {
+                  "IsEnabled": true,
+                  "EngineConfiguration": {
+                      "PollInterval": "00:00:15",
+                      "Components": [
+                          {
+                              "Id": "SSMConfigLogs",
+                              "FullName": "AWS.EC2.Windows.CloudWatch.CustomLog.CustomLogInputComponent,AWS.EC2.Windows.CloudWatch",
+                              "Parameters": {
+                                  "LogDirectoryPath": "C:\\Docutap\\SSMLogs\\",
+                                  "TimestampFormat": "yyyy-MM-dd HH:mm:ss",
+                                  "Encoding": "UTF-8",
+                                  "Filter": "",
+                                  "CultureName": "en-US",
+                                  "TimeZoneKind": "UTC",
+                                  "LineCount": "1"
+                              }
+                          },
+                          {
+                              "Id": "MemoryPerformanceCounter",
+                              "FullName": "AWS.EC2.Windows.CloudWatch.PerformanceCounterComponent.PerformanceCounterInputComponent,AWS.EC2.Windows.CloudWatch",
+                              "Parameters": {
+                                  "CategoryName": "Memory",
+                                  "CounterName": "Available MBytes",
+                                  "InstanceName": "",
+                                  "MetricName": "Memory",
+                                  "Unit": "Megabytes",
+                                  "DimensionName": "instance_id",
+                                  "DimensionValue": "{instance_id}"
+                              }
+                          },
+                          {
+                              "Id": "DiskPerformanceCounter",
+                              "FullName": "AWS.EC2.Windows.CloudWatch.PerformanceCounterComponent.PerformanceCounterInputComponent,AWS.EC2.Windows.CloudWatch",
+                              "Parameters": {
+                                  "CategoryName": "LogicalDisk",
+                                  "CounterName": "% Free Space",
+                                  "InstanceName": "C:",
+                                  "MetricName": "C_Drive_Free_Percent",
+                                  "Unit": "Percent",
+                                  "DimensionName": "instance_id",
+                                  "DimensionValue": "{instance_id}"
+                              }
+                          },
+                          {
+                              "Id": "CloudWatchLogs",
+                              "FullName": "AWS.EC2.Windows.CloudWatch.CloudWatchLogsOutput,AWS.EC2.Windows.CloudWatch",
+                              "Parameters": {
+                                  "AccessKey": "",
+                                  "SecretKey": "",
+                                  "Region": "us-east-1",
+                                  "LogGroup": "ssm/config/${EnvParm}",
+                                  "LogStream": "{instance_id}"
+                              }
+                          },
+                          {
+                            "Id": "CloudWatch",
+                            "FullName": "AWS.EC2.Windows.CloudWatch.CloudWatch.CloudWatchOutputComponent,AWS.EC2.Windows.CloudWatch",
+                            "Parameters": {
+                                "AccessKey": "",
+                                "SecretKey": "",
+                                "Region": "us-east-1",
+                                "NameSpace": "Windows/Default"
+                            }
+                          }
+                      ],
+                      "Flows": {
+                          "Flows": 
+                          [
+                              "SSMConfigLogs,CloudWatchLogs",
+                              "(DiskPerformanceCounter,MemoryPerformanceCounter),CloudWatch"
+                          ]
+                      }
+                  }
+              }
+  SsmCloudwatchEventMonitor:
+    Type: "AWS::Events::Rule"
+    Properties: 
+      Description: !Sub HC-ADM-CMT-Alerter-${EnvParm}
+      EventPattern: 
+        source: 
+          - "aws.ssm"
+        detail-type: 
+          - "EC2 State Manager Instance Association State Change"
+        detail:
+          association-name:
+            - !Sub HC-ADM-CMT-ConfigureCloudwatch-${EnvParm}
+            - !Sub HC-ADM-CMT-GatherInventory-${EnvParm}
+            - !Sub HC-ADM-CMT-Manager-${EnvParm}
+            - !Sub HC-ADM-CMT-ScanPatches-${EnvParm}
+            - !Sub HC-ADM-CMT-UpdateSsmAgent-${EnvParm}
+          status: 
+            - "Failed"
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: !FindInMap [!Ref AcctParm, !Ref EnvParm, SnsTopicItEngAlert]
+          Id: ItEngSnsTopic
+          InputTransformer:
+            InputPathsMap: {
+             "instance-id" : "$.detail.instance-id",
+              "last-successful-execution-date" : "$.detail.last-successful-execution-date",
+              "association" : "$.detail.association-name",
+              "last-execution-date" : "$.detail.last-execution-date"
+            }
+            InputTemplate: '"SSM Association <association> has failed on instance <instance-id>. Last successful run: <last-successful-execution-date>. Last execution date: <last-execution-date>"'
+

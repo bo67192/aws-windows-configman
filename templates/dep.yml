@@ -14,7 +14,7 @@ Mappings:
   Accounts:
     sandbox:
       AmiId: ami-2d18313b
-  Sandbox:
+  sandbox:
     test:
       SsmParameterArnPrefix: arn:aws:ssm:us-east-1:748540586735:parameter
 Resources:

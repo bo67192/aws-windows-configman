@@ -47,9 +47,9 @@ Parameters:
       - m5a.large
   Image:
     Type: String
-    Default: ami-0f4c7e570f044b46f
+    Default: ami-07a29e78aeb420471
     AllowedValues:
-      - ami-0f4c7e570f044b46f
+      - ami-07a29e78aeb420471
   Environment:
     Type: String
     Default: prod

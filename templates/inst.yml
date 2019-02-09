@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Resources:
-  CMTWVDA503:
+  InstWindows:
     Type: AWS::EC2::Instance
       DisableApiTermination: !FindInMap [Environments, !Ref EnvironmentValue, DISABLEAPITERMINATION]
       IamInstanceProfile: !FindInMap [Environments, !Ref EnvironmentValue, IAMINSTANCEPROFILE]

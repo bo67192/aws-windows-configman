@@ -12,7 +12,7 @@ Parameters:
       - prod
 Mappings:
   Accounts:
-    CORP:
+    sandbox:
       AmiId: ami-2d18313b
   Sandbox:
     test:

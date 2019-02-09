@@ -18,6 +18,22 @@ Mappings:
     prod:
       SsmParameterArnPrefix: arn:aws:ssm:us-east-1:748540586735:parameter
 Resources:
+  CodeDeployRole: 
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole
+      RoleName: CodeDeployRole
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "codedeploy.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
   CodeDeployApplicationCtxMgmt:
     Type: "AWS::CodeDeploy::Application"
     Properties:
@@ -33,7 +49,7 @@ Resources:
           Key: SSM_Modules
           Value: !Sub PHI-ALL-${Environment}
           Type: "KEY_AND_VALUE"
-      ServiceRoleArn: !FindInMap [!Ref Account, all, CodeDeployServiceRole]
+      ServiceRoleArn: !GetAtt CodeDeployRole.Arn
     DependsOn: CodeDeployApplicationCtxMgmt
   SsmAssociationUpdateAmazonInspectorManageAWSAgent:
     Type: "AWS::SSM::Association"

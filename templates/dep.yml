@@ -42,7 +42,7 @@ Resources:
     Type: "AWS::CodeDeploy::DeploymentGroup"
     Properties:
       ApplicationName: !Sub "hc-cmt-man-utilities-${Account}-${Environment}"
-      DeploymentGroupName: !Sub "hs-cmt-${Environment}-deploy"
+      DeploymentGroupName: !Sub "powershell-utilities-${Environment}"
       DeploymentConfigName: CodeDeployDefault.HalfAtATime
       Ec2TagFilters:
         -

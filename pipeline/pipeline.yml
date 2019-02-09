@@ -227,8 +227,8 @@ Resources:
                 Version: 1
                 Provider: CodeDeploy
               Configuration:
-                ApplicationName: !Sub "powershell-utilities"
-                DeploymentGroupName: !Sub "windows-prod"
+                ApplicationName: powershell-utilities-${Environment}
+                DeploymentGroupName: "windows-prod"
               RunOrder: 8
 Parameters:
   OAUTHTOKEN:

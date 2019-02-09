@@ -1,6 +1,6 @@
 {
     "Parameters": {
-        "EnvParm": "prod",
-        "AcctParm":"sandbox"
+        "Environment": "prod",
+        "Account":"sandbox"
     }
 }

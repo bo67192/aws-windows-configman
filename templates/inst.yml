@@ -69,3 +69,7 @@ Parameters:
     Type: String
     Description: The name of the instance
     Default: anewwindowsserver
+  KeyName:
+      Type: String
+      Description: aws secret key for this instance
+      Default: bolson-sandbox

@@ -2,10 +2,10 @@ AWSTemplateFormatVersion: "2010-09-09"
 Resources:
   InstWindows:
     Type: AWS::EC2::Instance
-      DisableApiTermination: !FindInMap [Environments, !Ref EnvironmentValue, DISABLEAPITERMINATION]
-      IamInstanceProfile: !FindInMap [Environments, !Ref EnvironmentValue, IAMINSTANCEPROFILE]
-      ImageId: !FindInMap [Imageinfo, IMAGES, !Ref VDA01InstanceImage]
-      InstanceType: !Ref VDA01InstanceType
+    Properties:
+      IamInstanceProfile: !Ref IamRoleWindowsServer
+      ImageId: !Ref Image
+      InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       SubnetId: !Ref SubnetID
       Tags:
@@ -13,6 +13,31 @@ Resources:
           Value: !Ref InstanceName
         - Key: SSM_Association
           Value: !Sub Windows-${Environment}
+  IamRoleWindowsServer: 
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      RoleName: !Sub "Role=CMTPoolServer,Env=${EnvParm},Service=EC2,Rights=RW"
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+      - PolicyName: !Sub "Role=WindowsServer,Env=${EnvParm},Service=Cloudwatch,Rights=RW"
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:PutLogEvents
+            Resource: "*"
 Parameters:
   InstanceType:
     Type: String

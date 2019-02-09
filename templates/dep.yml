@@ -209,35 +209,3 @@ Resources:
                       }
                   }
               }
-  SsmCloudwatchEventMonitor:
-    Type: "AWS::Events::Rule"
-    Properties: 
-      Description: !Sub HC-ADM-CMT-Alerter-${Environment}
-      EventPattern: 
-        source: 
-          - "aws.ssm"
-        detail-type: 
-          - "EC2 State Manager Instance Association State Change"
-        detail:
-          association-name:
-            - !Sub HC-ADM-CMT-ConfigureCloudwatch-${Environment}
-            - !Sub HC-ADM-CMT-GatherInventory-${Environment}
-            - !Sub HC-ADM-CMT-Manager-${Environment}
-            - !Sub HC-ADM-CMT-ScanPatches-${Environment}
-            - !Sub HC-ADM-CMT-UpdateSsmAgent-${Environment}
-          status: 
-            - "Failed"
-      State: "ENABLED"
-      Targets: 
-        - 
-          Arn: !FindInMap [!Ref Account, !Ref Environment, SnsTopicItEngAlert]
-          Id: ItEngSnsTopic
-          InputTransformer:
-            InputPathsMap: {
-             "instance-id" : "$.detail.instance-id",
-              "last-successful-execution-date" : "$.detail.last-successful-execution-date",
-              "association" : "$.detail.association-name",
-              "last-execution-date" : "$.detail.last-execution-date"
-            }
-            InputTemplate: '"SSM Association <association> has failed on instance <instance-id>. Last successful run: <last-successful-execution-date>. Last execution date: <last-execution-date>"'
-

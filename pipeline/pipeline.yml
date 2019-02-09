@@ -166,7 +166,7 @@ Resources:
                 RoleArn: !GetAtt CloudformationRole.Arn
               RunOrder: 1
             -
-              Name: ChngSet-Instance
+              Name: ChngSet-inst
               InputArtifacts:
                 - 
                   Name: windows-configman-built
@@ -178,7 +178,7 @@ Resources:
               Configuration:
                 ActionMode: CHANGE_SET_REPLACE
                 ChangeSetName: updatefromcodepipeline
-                StackName: ssm-prod
+                StackName: inst-prod
                 TemplatePath: windows-configman-built::templates/inst.yml
                 TemplateConfiguration: windows-configman-built::templates/inst-params-prod.json
                 Capabilities: CAPABILITY_NAMED_IAM

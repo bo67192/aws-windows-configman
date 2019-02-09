@@ -4,12 +4,12 @@ Mappings:
     prod:
       SSMAssociationTag: Windows-prod
 Parameters:
-  EnvironmentParameter:
+  Environment:
     Type: String
     Default: "prod"
     AllowedValues:
     - "prod"
-  AccountParameter:
+  Account:
       Type: String
       Default: sandbox
       AllowedValues:

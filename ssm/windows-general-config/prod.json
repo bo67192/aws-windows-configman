@@ -1,7 +1,6 @@
 {
     "Parameters": {
-        "EnvParm": "prod",
-        "AcctParm":"PHI",
-        "PoolFleetVersion": "001"
+        "Environment": "prod",
+        "Account":"PHI"
     }
 }

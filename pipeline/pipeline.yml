@@ -141,10 +141,10 @@ Resources:
                 ActionMode: CHANGE_SET_REPLACE
                 ChangeSetName: updatefromcodepipeline
                 StackName: ssm-prod
-                TemplatePath: windows-configman-built::ssm/windows-general-config/ssm-build.yml
+                TemplatePath: windows-configman-built::ssm/windows-general-config/ssm-built.yml
                 TemplateConfiguration: windows-configman-built::ssm/windows-general-config/prod.json
                 Capabilities: CAPABILITY_NAMED_IAM
-                RoleArn: !GetAtt CodepipelineRole.Arn
+                RoleArn: !GetAtt CloudformationRole.Arn
               RunOrder: 1
             -
               Name: ChngSet-DEP
@@ -161,9 +161,9 @@ Resources:
                 ChangeSetName: updatefromcodepipeline
                 StackName: dep-prod
                 TemplatePath: windows-configman-built::templates/dep.yml
-                TemplateConfiguration: windows-configman-built::templates/inst-params-prod.json
+                TemplateConfiguration: windows-configman-built::templates/dep-params-prod.json
                 Capabilities: CAPABILITY_NAMED_IAM
-                RoleArn: !GetAtt CodepipelineRole.Arn
+                RoleArn: !GetAtt CloudformationRole.Arn
               RunOrder: 1
             -
               Name: ChngSet-Instance
@@ -179,10 +179,10 @@ Resources:
                 ActionMode: CHANGE_SET_REPLACE
                 ChangeSetName: updatefromcodepipeline
                 StackName: ssm-prod
-                TemplatePath: windows-configman-built::ssm/windows/ssm-build.yml
+                TemplatePath: windows-configman-built::templates/inst.yml
                 TemplateConfiguration: windows-configman-built::templates/inst-params-prod.json
                 Capabilities: CAPABILITY_NAMED_IAM
-                RoleArn: !GetAtt CodepipelineRole.Arn
+                RoleArn: !GetAtt CloudformationRole.Arn
               RunOrder: 1
             -
               Name: Execute-DEP
@@ -198,7 +198,7 @@ Resources:
                 ActionMode: CHANGE_SET_EXECUTE
                 ChangeSetName: updatefromcodepipeline
                 StackName: dep-prod
-                RoleArn: !GetAtt CodepipelineRole.Arn
+                RoleArn: !GetAtt CloudformationRole.Arn
               RunOrder: 5
             -
               Name: Execute-SSM
@@ -214,7 +214,7 @@ Resources:
                 ActionMode: CHANGE_SET_EXECUTE
                 ChangeSetName: updatefromcodepipeline
                 StackName: ssm-prod
-                RoleArn: !GetAtt CodepipelineRole.Arn
+                RoleArn: !GetAtt CloudformationRole.Arn
               RunOrder: 8
             -
               Name: Deploy-Powershell-Utilities

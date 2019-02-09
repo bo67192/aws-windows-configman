@@ -25,31 +25,6 @@ Mappings:
     test:
       SsmParameterArnPrefix: arn:aws:ssm:us-east-1:748540586735:parameter
 Resources:
-  IamRoleWindowsServer: 
-    Type: "AWS::IAM::Role"
-    Properties:
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
-      RoleName: !Sub "Role=CMTPoolServer,Env=${EnvParm},Service=EC2,Rights=RW"
-      AssumeRolePolicyDocument: 
-        Version: "2012-10-17"
-        Statement: 
-          - 
-            Effect: "Allow"
-            Principal: 
-              Service: 
-                - "ec2.amazonaws.com"
-            Action: 
-              - "sts:AssumeRole"
-      Path: "/"
-      Policies:
-      - PolicyName: !Sub "Role=WindowsServer,Env=${EnvParm},Service=Cloudwatch,Rights=RW"
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-            - logs:PutLogEvents
-            Resource: "*"
   CodeDeployApplicationCtxMgmt:
     Type: "AWS::CodeDeploy::Application"
     Properties:

@@ -230,6 +230,22 @@ Resources:
                 ApplicationName: powershell-utilities-${Environment}
                 DeploymentGroupName: "windows-prod"
               RunOrder: 8
+            -
+              Name: Execute-Inst
+              InputArtifacts:
+                - 
+                  Name: windows-configman-built
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: updatefromcodepipeline
+                StackName: ssm-inst
+                RoleArn: !GetAtt CloudformationRole.Arn
+              RunOrder: 12
 Parameters:
   OAUTHTOKEN:
     Type: String

@@ -62,7 +62,8 @@ Resources:
       ScheduleExpression: "rate(1 day)"
       Targets:
         - Key: tag:SSM_Association
-          Values: Windows-${Environment}
+          Values: 
+            - windows-${Environment}
   SsmAssociationUpdateEc2Config:
     Type: "AWS::SSM::Association"
     Properties: 
@@ -86,9 +87,9 @@ Resources:
           - "/quiet /l c:\\codedeploy-install-log.txt"
       ScheduleExpression: "rate(1 day)"
       Targets:
-        - Key: tag:SSM_Modules
+        - Key: tag:SSM_Association
           Values: 
-            - !Sub "PHI-ALL-${Environment}"
+            - !Sub windows-${Environment}
   SsmAssociationQueryUpdateSsmAgent:
     Type: "AWS::SSM::Association"
     Properties: 
@@ -100,7 +101,8 @@ Resources:
           - "true"
       Targets:
         - Key: tag:SSM_Association
-          Values: Windows-${Environment}
+          Values: 
+            - windows-${Environment}
   SsmAssociationQueryScanPatches:
     Type: "AWS::SSM::Association"
     Properties: 
@@ -112,7 +114,8 @@ Resources:
           - Scan
       Targets:
         - Key: tag:SSM_Association
-          Values: Windows-${Environment}
+          Values: 
+            - windows-${Environment}
   SsmAssociationGatherInventory:
     Type: "AWS::SSM::Association"
     Properties: 
@@ -121,7 +124,8 @@ Resources:
       ScheduleExpression: "rate(1 day)"
       Targets:
         - Key: tag:SSM_Association
-          Values: Windows-${Environment}
+          Values: 
+            - windows-${Environment}
   SsmAssociationConfigureCloudwatch:
     Type: AWS::SSM::Association
     Properties:
@@ -130,7 +134,8 @@ Resources:
       ScheduleExpression: "rate(1 day)"
       Targets:
         - Key: tag:SSM_Association
-          Values: Windows-${Environment}
+          Values: 
+            - windows-${Environment}
       Parameters:
         properties: 
           - !Sub |+

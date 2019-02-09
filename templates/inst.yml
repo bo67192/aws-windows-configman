@@ -12,7 +12,7 @@ Resources:
         - Key: Name
           Value: !Ref InstanceName
         - Key: SSM_Association
-          Value: !Sub Windows-${Environment}
+          Value: !Sub windows-${Environment}
   IamRoleWindowsServer: 
     Type: "AWS::IAM::Role"
     Properties:

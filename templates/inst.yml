@@ -3,7 +3,7 @@ Resources:
   InstWindows:
     Type: AWS::EC2::Instance
     Properties:
-      IamInstanceProfile: !Ref IamRoleWindowsServer
+      IamInstanceProfile: !Ref IamProfileWindowsServer
       ImageId: !Ref Image
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
@@ -13,6 +13,12 @@ Resources:
           Value: !Ref InstanceName
         - Key: SSM_Association
           Value: !Sub windows-${Environment}
+  IamProfileWindowsServer:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Roles:
+        - !Ref IamRoleWindowsServer
+      InstanceProfileName: WindowsServer
   IamRoleWindowsServer: 
     Type: "AWS::IAM::Role"
     Properties:

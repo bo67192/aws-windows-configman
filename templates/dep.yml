@@ -165,7 +165,7 @@ Resources:
                                   "CategoryName": "Memory",
                                   "CounterName": "Available MBytes",
                                   "InstanceName": "",
-                                  "MetricName": "Memory",
+                                  "MetricName": "AvailableMemory",
                                   "Unit": "Megabytes",
                                   "DimensionName": "instance_id",
                                   "DimensionValue": "{instance_id}"
